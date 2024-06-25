@@ -1,0 +1,5 @@
+.env
+__pycache__/
+target-repo/
+# venv
+llm-code-audits/
