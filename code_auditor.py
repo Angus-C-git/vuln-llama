@@ -2,8 +2,6 @@
 # the fs and process it from there
 import os
 import git
-
-# arg parsing
 import argparse
 
 # we need to split the text (code) into chunks
@@ -31,24 +29,25 @@ from langchain_core.output_parsers import StrOutputParser
 # REPO_URL = "https://github.com/redpointsec/vtm.git"
 REPO_URL = "https://github.com/fonttools/fonttools.git"
 LOCAL_REPO_DIR = "./target-repo"
-from code_auditor.constants import TEMPLATE, LANGUAGES
+
+from code_auditor.constants import TEMPLATE, LANGUAGES, LANGUAGE_SUFFIXES
 
 
 def main(flags):
     # attempt to clone the repo to the local dir if it doesn't exist
-    if not os.path.exists(LOCAL_REPO_DIR):
-        git.Repo.clone_from(REPO_URL, LOCAL_REPO_DIR)
+    if not os.path.exists(flags.path):
+        git.Repo.clone_from(flags.repo, flags.path)
 
-    print(f"[>>] Repo cloned to: {LOCAL_REPO_DIR}")
+    print(f"[>>] Repo cloned to: {flags.path}")
+    print(f"[>>] Using language parser: {flags.lang}")
 
     # pack a loader class
     loader = GenericLoader.from_filesystem(
-        flags.repo,
+        flags.path,
         glob="**/*",
-        suffixes=[".py"],
+        suffixes=[LANGUAGE_SUFFIXES[flags.lang]],
         # ignore_dirs=[".git"],
-        # parser=LANGUAGES[flags.lang],
-        parser=LanguageParser(Language.PYTHON),
+        parser=LanguageParser(language=LANGUAGES[flags.lang]),
     )
 
     # create documents
@@ -56,14 +55,23 @@ def main(flags):
 
     # chunk the code recursively maintaining language conventions
     splitter = RecursiveCharacterTextSplitter.from_language(
-        Language.PYTHON, chunk_size=100000, chunk_overlap=1000
+        LANGUAGES[flags.lang], chunk_size=100000, chunk_overlap=1000
     )
 
     # create chunks
     texts = splitter.split_documents(documents)
 
-    # create prompt template
-    prompt = PromptTemplate.from_template(TEMPLATE)
+    # crate prompt template
+
+    template = """
+    Based on the code provided below answer the question.
+
+    Code: {code}
+
+    Question: {question}
+    """
+
+    prompt = PromptTemplate.from_template(template)
 
     # init CodeLlama model
     llm = ChatOllama(model_id="ollama")
@@ -88,7 +96,7 @@ def main(flags):
         print(f"[>>] Analysing code from: {fname}")
         for chunk in chain.stream(
             {
-                "question": "Analyze the provided code for any security flaws you find in it and produce a brief summary of that analysis.",
+                "question": "Analyze the provided code for any security flaws. Present the results in a bulleted list.",
                 "code": code,
             }
         ):
@@ -96,7 +104,6 @@ def main(flags):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--repo", type=str, default="https://github.com/fonttools/fonttools.git"

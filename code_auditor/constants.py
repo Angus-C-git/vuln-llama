@@ -1,14 +1,32 @@
 from langchain_community.document_loaders.parsers import LanguageParser
 
+# we need to split the text (code into chunks
+# to be able to process it because the models
+# context window
+from langchain.text_splitter import Language
+
 # simplify arg switching for the loader
+# by wrapping the Language enum
 LANGUAGES = {
-    "python": LanguageParser(language="python"),
-    "javascript": LanguageParser(language="js"),
-    "java": LanguageParser(language="java"),
-    "go": LanguageParser(language="go"),
-    "rust": LanguageParser(language="rust"),
-    "c": LanguageParser(language="c"),
-    "cpp": LanguageParser(language="cpp"),
+    "python": Language.PYTHON,
+    "js": Language.JS,
+    "ts": Language.TS,
+    "java": Language.JAVA,
+    "go": Language.GO,
+    "rust": Language.RUST,
+    "c": Language.C,
+    "cpp": Language.CPP,
+}
+
+LANGUAGE_SUFFIXES = {
+    "python": ".py",
+    "js": ".js",
+    "ts": ".ts",
+    "java": ".java",
+    "go": ".go",
+    "rust": ".rs",
+    "c": ".c",
+    "cpp": ".cpp",
 }
 
 
