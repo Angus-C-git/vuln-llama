@@ -31,9 +31,9 @@ LANGUAGE_SUFFIXES = {
 
 
 TEMPLATE = """
-Based on the code provided below answer the question.
+    Based on the code provided below answer ONLY the question in a bulleted list. Do not provide any other text, explanation or analysis.
 
-Code: {code}
+    Code: {code}
 
-Question: {question}
+    Question: {question}
 """
